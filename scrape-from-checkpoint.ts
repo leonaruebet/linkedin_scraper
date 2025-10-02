@@ -1,4 +1,4 @@
-import { OptimizedCompanyScraper } from './lib/scraper/optimized-company-scraper.js';
+const { OptimizedCompanyScraper } = require('./lib/scraper/optimized-company-scraper');
 import fs from 'fs';
 import path from 'path';
 

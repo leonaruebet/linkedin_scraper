@@ -21,7 +21,19 @@
       "Bash(npx ts-node:*)",
       "Bash(MAX_COMPANIES=2 npm run scrape:employees)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run reset:browser:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git clone:*)",
+      "Bash(chmod:*)",
+      "Bash(./setup-python-scraper.sh:*)",
+      "Bash(source:*)",
+      "Bash(MAX_COMPANIES=2 python3 scrape_employees_python.py)",
+      "Bash(MAX_COMPANIES=2 npm run scrape:companies:optimized)",
+      "Bash(MAX_COMPANIES=2 npm run scrape:employees:fast)"
     ],
     "deny": [],
     "ask": []

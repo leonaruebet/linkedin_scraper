@@ -20,7 +20,7 @@ async function main() {
   const scraper = new OptimizedCompanyScraper(
     process.env.LINKEDIN_EMAIL,
     process.env.LINKEDIN_PASSWORD,
-    2 // 2 parallel workers (slower but avoids rate limits)
+    4 // 4 parallel workers for faster scraping
   );
 
   try {

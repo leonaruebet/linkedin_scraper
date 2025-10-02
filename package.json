@@ -8,7 +8,12 @@
     "scrape:companies": "ts-node --project tsconfig.node.json scripts/scrape-companies.ts",
     "scrape:companies:bulk": "ts-node --project tsconfig.node.json scripts/scrape-companies-bulk.ts",
     "scrape:companies:optimized": "ts-node --project tsconfig.node.json scripts/scrape-companies-optimized.ts",
-    "scrape:companies:safe": "ts-node --project tsconfig.node.json scripts/scrape-companies-safe.ts"
+    "scrape:companies:safe": "ts-node --project tsconfig.node.json scripts/scrape-companies-safe.ts",
+    "scrape:employees": "ts-node --project tsconfig.node.json scripts/scrape-employees.ts",
+    "scrape:employees:fast": "ts-node --project tsconfig.node.json scripts/scrape-employees-fast.ts",
+    "reset:browser": "ts-node --project tsconfig.node.json scripts/reset-browser.ts",
+    "clear:cache": "ts-node --project tsconfig.node.json scripts/clear-cache.ts",
+    "test:account": "ts-node --project tsconfig.node.json scripts/test-account-status.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.1",

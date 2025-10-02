@@ -19,7 +19,7 @@ export class OptimizedCompanyScraper {
   constructor(
     private email: string = process.env.LINKEDIN_EMAIL || '',
     private password: string = process.env.LINKEDIN_PASSWORD || '',
-    private maxWorkers: number = 10 // Increased to 10 workers
+    private maxWorkers: number = 5 // 5 workers for ~10 companies/min
   ) {
     const dataDir = path.join(process.cwd(), 'scraped-data');
     if (!fs.existsSync(dataDir)) {
@@ -126,12 +126,18 @@ export class OptimizedCompanyScraper {
         await loginPage.fill('#password', this.password);
         await loginPage.click('button[type="submit"]');
 
-        console.log('⏳ Waiting for login... (60 seconds for manual checkpoint solving)');
+        console.log('⏳ Waiting for login...');
 
-        // Wait up to 60 seconds for either feed or checkpoint
-        await this.delay(10000);
+        // Wait for navigation after login (either to feed, checkpoint, or challenge)
+        await Promise.race([
+          loginPage.waitForURL('**/feed/**', { timeout: 30000 }).catch(() => {}),
+          loginPage.waitForURL('**/checkpoint/**', { timeout: 30000 }).catch(() => {}),
+          loginPage.waitForURL('**/challenge/**', { timeout: 30000 }).catch(() => {}),
+          this.delay(30000) // Fallback: wait 30 seconds
+        ]);
 
         const url = loginPage.url();
+        console.log(`📍 Current URL after login: ${url}`);
 
         if (url.includes('/checkpoint') || url.includes('/challenge')) {
           console.log('⚠️  Security checkpoint detected!');
@@ -142,12 +148,25 @@ export class OptimizedCompanyScraper {
           await this.delay(60000);
 
           const finalUrl = loginPage.url();
-          if (!finalUrl.includes('/feed')) {
-            console.log(`❌ Checkpoint not solved - URL: ${finalUrl}`);
+          console.log(`📍 Final URL after checkpoint: ${finalUrl}`);
+
+          // Accept updatePhoneNumber checkpoint if user skips it
+          if (finalUrl.includes('/updatePhoneNumber')) {
+            console.log('⏭️  Skipping phone number update checkpoint...');
+            const skipButton = await loginPage.$('button:has-text("Skip")');
+            if (skipButton) {
+              await skipButton.click();
+              await this.delay(3000);
+            }
+          }
+
+          const verifiedUrl = loginPage.url();
+          if (!verifiedUrl.includes('/feed') && !verifiedUrl.includes('linkedin.com/in/') && !verifiedUrl.includes('/mynetwork')) {
+            console.log(`❌ Checkpoint not solved - URL: ${verifiedUrl}`);
             await loginBrowser.close();
             throw new Error('Manual checkpoint solving required');
           }
-        } else if (!url.includes('/feed')) {
+        } else if (!url.includes('/feed') && !url.includes('linkedin.com/in/') && !url.includes('/mynetwork')) {
           console.log(`❌ Login failed - URL: ${url}`);
           await loginBrowser.close();
           throw new Error('Login failed');
@@ -460,8 +479,8 @@ export class OptimizedCompanyScraper {
             checkpoint.scrapedCount = checkpoint.completedUrls.length;
             checkpoint.timestamp = new Date().toISOString();
 
-            // Save checkpoint every 10 companies
-            if (checkpoint.completedUrls.length % 10 === 0) {
+            // Save checkpoint every 5 companies (more frequent saves)
+            if (checkpoint.completedUrls.length % 5 === 0) {
               this.saveCheckpoint(checkpoint);
             }
           } else {
@@ -473,7 +492,7 @@ export class OptimizedCompanyScraper {
           console.error(`   ❌ Failed: ${error.message}`);
         }
 
-        await this.delay(10000, 15000); // Very slow delays to avoid rate limits (10-15s between companies)
+        await this.delay(17000, 60000); // ~1-3.5 companies/min (17-60s between companies) - safer delays
       }
 
       await page.close();
@@ -497,7 +516,14 @@ export class OptimizedCompanyScraper {
       // Check if redirected to login/checkpoint/authwall
       const currentUrl = page.url();
       if (currentUrl.includes('/login') || currentUrl.includes('/checkpoint') || currentUrl.includes('/authwall')) {
-        console.log(`   ⚠️  Redirected to auth page: ${currentUrl}`);
+        console.log(`   🚨 CHECKPOINT DETECTED: ${currentUrl}`);
+        console.log(`   ⏸️  Pausing for 5 minutes to avoid further detection...`);
+
+        // Wait 5 minutes before continuing
+        await this.delay(300000, 300000); // 5 minutes
+
+        console.log(`   ⚠️  Checkpoint detected - this company will be skipped`);
+        console.log(`   💡 TIP: If checkpoints keep appearing, the account may be flagged`);
         return null;
       }
 
@@ -603,6 +629,12 @@ export class OptimizedCompanyScraper {
 
       const employeeCount = this.parseEmployeeCount(companyData.companySize);
 
+      // Extract email from website
+      let email = '';
+      if (companyData.website) {
+        email = await this.extractEmailFromWebsite(page, companyData.website);
+      }
+
       return {
         companyId: companyData.universalName,
         name: companyData.name,
@@ -611,7 +643,7 @@ export class OptimizedCompanyScraper {
         description: companyData.description,
         website: companyData.website,
         phone: companyData.phone,
-        email: '',
+        email: email,
         industry: companyData.industry,
         companySize: companyData.companySize,
         employeeCount,
@@ -629,6 +661,41 @@ export class OptimizedCompanyScraper {
 
     } catch (error) {
       return null;
+    }
+  }
+
+  private async extractEmailFromWebsite(page: Page, websiteUrl: string): Promise<string> {
+    try {
+      const response = await page.goto(websiteUrl, {
+        waitUntil: 'domcontentloaded',
+        timeout: 15000
+      });
+
+      if (!response || !response.ok()) return '';
+
+      const emails = await page.evaluate(() => {
+        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        const text = document.body.textContent || '';
+        const matches = text.match(emailRegex);
+
+        if (matches) {
+          // Filter out common non-contact emails
+          return matches.filter(email =>
+            !email.includes('example.com') &&
+            !email.includes('sentry.io') &&
+            !email.includes('google') &&
+            !email.includes('facebook') &&
+            !email.includes('wixpress.com')
+          );
+        }
+        return [];
+      });
+
+      // Return first valid email found
+      return emails && emails.length > 0 ? emails[0] : '';
+
+    } catch (error) {
+      return '';
     }
   }
 
