@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm run scrape:local:*)",
+      "Bash(test:*)",
+      "Bash(npx puppeteer browsers:*)",
+      "Bash(tee:*)",
+      "Bash(npm install:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(pkill:*)",
+      "Bash(npm run scrape:pw:*)",
+      "Bash(npm run scrape:bulk:*)",
+      "Bash(tree:*)",
+      "Bash(npm run scrape:companies:*)",
+      "Bash(cat:*)",
+      "Bash(npm run scrape:companies:optimized:*)",
+      "Bash(time npm run scrape:companies:optimized:*)",
+      "Bash(jq:*)",
+      "Bash(curl -s \"https://www.linkedin.com/company/evlomo/about/\" -H \"User-Agent: Mozilla/5.0\")",
+      "Bash(npx ts-node:*)",
+      "Bash(MAX_COMPANIES=2 npm run scrape:employees)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
