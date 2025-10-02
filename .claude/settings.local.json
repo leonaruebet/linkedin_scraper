@@ -33,7 +33,8 @@
       "Bash(source:*)",
       "Bash(MAX_COMPANIES=2 python3 scrape_employees_python.py)",
       "Bash(MAX_COMPANIES=2 npm run scrape:companies:optimized)",
-      "Bash(MAX_COMPANIES=2 npm run scrape:employees:fast)"
+      "Bash(MAX_COMPANIES=2 npm run scrape:employees:fast)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []
